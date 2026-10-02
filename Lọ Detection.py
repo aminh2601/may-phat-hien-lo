@@ -4,9 +4,7 @@ import numpy as np
 from collections import deque
 import math
 
-# =========================
 # CONFIG
-# =========================
 WINDOW_SIZE = 18
 
 # Rule 1: right arm motion
@@ -20,9 +18,7 @@ DIRECTION_CHANGE_THRESHOLD = 1
 HIP_DISTANCE_THRESHOLD = 0.12
 THIGH_DISTANCE_THRESHOLD = 0.10
 
-# =========================
 # MEDIAPIPE SETUP
-# =========================
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(
     static_image_mode=False,
@@ -32,14 +28,10 @@ pose = mp_pose.Pose(
 )
 mp_draw = mp.solutions.drawing_utils
 
-# =========================
 # CAMERA
-# =========================
 cap = cv2.VideoCapture(0)
 
-# =========================
 # HISTORY
-# =========================
 shoulder_y_history = deque(maxlen=WINDOW_SIZE)
 
 elbow_y_history = deque(maxlen=WINDOW_SIZE)
@@ -160,7 +152,7 @@ while True:
             hip = (rh.x, rh.y)
             knee = (rk.x, rk.y)
 
-            # lưu history
+            # save history
             shoulder_y_history.append(shoulder[1])
 
             elbow_y_history.append(elbow[1])
@@ -172,7 +164,7 @@ while True:
             elbow_angle = angle_abc(shoulder, elbow, wrist)
             elbow_angle_history.append(elbow_angle)
 
-            # ===== motion features =====
+            # motion features
             shoulder_still = motion_range(shoulder_y_history)
 
             elbow_move_y = motion_range(elbow_y_history)
@@ -188,7 +180,7 @@ while True:
             elbow_dir_changes = count_direction_changes(elbow_y_history)
             wrist_dir_changes = count_direction_changes(wrist_y_history)
 
-            # ===== rule motion nhạy hơn =====
+            # rule motion more senstive
             motion_alert = (
                 shoulder_still <= SHOULDER_STILL_THRESHOLD and
                 (
@@ -202,7 +194,7 @@ while True:
                 )
             )
 
-            # ===== rule near hip/thigh =====
+            # rule near hip/thigh
             wrist_to_hip = dist2d(wrist, hip)
             wrist_to_thigh = point_to_segment_distance(wrist, hip, knee)
 
@@ -211,7 +203,7 @@ while True:
                 wrist_to_thigh <= THIGH_DISTANCE_THRESHOLD
             )
 
-            # ===== priority =====
+            # priority
             if motion_alert:
                 status = "DUNG LO NGAY CHO TAO "
                 color = (0, 0, 255)
@@ -225,7 +217,7 @@ while True:
                 color = (0, 255, 0)
                 reason = "-"
 
-            # ===== draw =====
+            # draw 
             rs_px = (int(shoulder[0] * w), int(shoulder[1] * h))
             re_px = (int(elbow[0] * w), int(elbow[1] * h))
             rw_px = (int(wrist[0] * w), int(wrist[1] * h))
@@ -242,7 +234,7 @@ while True:
             cv2.line(frame, re_px, rw_px, (255, 255, 0), 2)
             cv2.line(frame, rh_px, rk_px, (0, 200, 255), 3)
 
-            # ===== debug =====
+            # debug 
             cv2.putText(frame, f"Shoulder still: {shoulder_still:.3f}", (20, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
             cv2.putText(frame, f"Elbow move: {elbow_total_move:.3f}", (20, 70),
